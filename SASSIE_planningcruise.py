@@ -28,12 +28,10 @@ import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
 
-
-
 ######### DEFINE PARAMETERS ###################
 
 #day
-year=2021
+year=2018
 month=9
 day=1
 
@@ -51,9 +49,17 @@ latmapmin=68
 latmapmax=78
 
 #paths
+# SEVERINE
 rawdata_path=Path('/Users/severinf/Data/SASSIE/satellite/') 
 subsetdata_path=Path('/Users/severinf/Data/SASSIE/satellite/arctic/') 
 figures_path=Path('/Users/severinf/Figures/SASSIE/') 
+
+# KYLA CLOUD
+rawdata_path=Path('/home/jovyan/data/SASSIE/satellite/') 
+subsetdata_path=Path('/home/jovyan/data/SASSIE/satellite/arctic/') 
+figures_path=Path('/home/jovyan/figures/SASSIE') 
+
+
 
 
 
@@ -171,6 +177,7 @@ def map(x,y,data,vmin,vmax,**karg):
 my_datetime = datetime.datetime(year,month,day)
 doy = my_datetime.strftime('%j')
 
+
 #AMSR Sea ice
 os.system('mkdir -p '+str(rawdata_path)+'/seaice_amsr')
 filename='AMSR_U2_L3_SeaIce12km_B04_'+str(year)+str(month).zfill(2)+str(day).zfill(2)+'.he5'
@@ -198,7 +205,7 @@ if os.path.isfile(str(rawdata_path)+'/sst_oi/'+filename)==False:
 os.system('mkdir -p '+str(rawdata_path)+'/sss_smapjpl')
 filename='SMAP_L3_SSS_'+str(year)+str(month).zfill(2)+str(day).zfill(2)+'_8DAYS_V5.0.nc'
 if os.path.isfile(str(rawdata_path)+'/sss_smapjpl/'+filename)==False:
-    os.system('wget -P '+str(rawdata_path)+'/sss_smapjpl/'+' https://podaac-tools.jpl.nasa.gov/drive/files/allData/smap/L3/JPL/V5.0/8day_running/'+str(year)+'/'+str(int(doy)-4)+'/'+filename+' --user=severinf --password=8scaBW2FntIcptU#UOj')   
+    os.system('wget -P '+str(rawdata_path)+'/sss_smapjpl/'+' https://podaac-tools.jpl.nasa.gov/drive/files/allData/smap/L3/JPL/V5.0/8day_running/'+str(year)+'/'+str(int(doy)-4)+'/'+filename)   
 
 
 #AVISO SLA
@@ -206,9 +213,9 @@ os.system('mkdir -p '+str(rawdata_path)+'/sla_aviso')
 filename_dt='dt_global_allsat_phy_l4_'+str(year)+str(month).zfill(2)+str(day).zfill(2)+'_*nc'
 filename_nrt='nrt_global_allsat_phy_l4_'+str(year)+str(month).zfill(2)+str(day).zfill(2)+'_*nc'
 if len(glob.glob(str(rawdata_path)+'/sla_aviso/'+filename_dt))<1:
-    os.system('wget -P '+str(rawdata_path)+'/sla_aviso/'+' ftp://my.cmems-du.eu/Core/SEALEVEL_GLO_PHY_L4_MY_008_047/cmems_obs-sl_glo_phy-ssh_my_allsat-l4-duacs-0.25deg_P1D/'+str(year)+'/'+str(month).zfill(2)+'/'+filename_dt+' --user=sfournier --password=calin0852')   
+    os.system('wget -P '+str(rawdata_path)+'/sla_aviso/'+' ftp://my.cmems-du.eu/Core/SEALEVEL_GLO_PHY_L4_MY_008_047/cmems_obs-sl_glo_phy-ssh_my_allsat-l4-duacs-0.25deg_P1D/'+str(year)+'/'+str(month).zfill(2)+'/'+filename_dt)   
     if len(glob.glob(str(rawdata_path)+'/sla_aviso/'+filename_dt))<1 and len(glob.glob(str(rawdata_path)+'/sla_aviso/'+filename_nrt))<1:
-        os.system('wget -P '+str(rawdata_path)+'/sla_aviso/'+' ftp://nrt.cmems-du.eu/Core/SEALEVEL_GLO_PHY_L4_NRT_OBSERVATIONS_008_046/dataset-duacs-nrt-global-merged-allsat-phy-l4/'+str(year)+'/'+str(month).zfill(2)+'/'+filename_nrt+' --user=sfournier --password=calin0852')   
+        os.system('wget -P '+str(rawdata_path)+'/sla_aviso/'+' ftp://nrt.cmems-du.eu/Core/SEALEVEL_GLO_PHY_L4_NRT_OBSERVATIONS_008_046/dataset-duacs-nrt-global-merged-allsat-phy-l4/'+str(year)+'/'+str(month).zfill(2)+'/'+filename_nrt)   
     if len(glob.glob(str(rawdata_path)+'/sla_aviso/'+filename_dt))>0 and len(glob.glob(str(rawdata_path)+'/sla_aviso/'+filename_nrt))>0:
         os.system('rm '+str(rawdata_path)+'/sla_aviso/'+filename_nrt)
         
@@ -217,7 +224,7 @@ if len(glob.glob(str(rawdata_path)+'/sla_aviso/'+filename_dt))<1:
 os.system('mkdir -p '+str(rawdata_path)+'/sss_smos')
 filename='SMOS-arctic-LOCEAN-SSS-'+str(year)+'-'+str(month).zfill(2)+'-'+str(day).zfill(2)+'-v1.1AT-7days.nc'
 if os.path.isfile(str(rawdata_path)+'/sss_smos/'+filename)==False:
-    os.system('wget -P '+str(rawdata_path)+'/sss_smos/'+' ftp://ext-catds-cecos-locean@ftp.ifremer.fr/Ocean_products/SMOS_ARCTIC_SSS_L3_LOCEAN/netcdf_weekly_v1_1/'+filename+'  --user=ext-catds-cpdc --password=catds2010')   
+    os.system('wget -P '+str(rawdata_path)+'/sss_smos/'+' ftp://ext-catds-cecos-locean@ftp.ifremer.fr/Ocean_products/SMOS_ARCTIC_SSS_L3_LOCEAN/netcdf_weekly_v1_1/'+filename)   
 
 
 #ERA5 winds: https://cds.climate.copernicus.eu/cdsapp#!/dataset/reanalysis-era5-single-levels?tab=form
