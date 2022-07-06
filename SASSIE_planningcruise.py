@@ -13,6 +13,9 @@
 ##     - Aviso SLA
 ##
 ## Plot these data in the Beaufort Sea and save the figures locally
+## When force is:
+##     - False, the files won't be redownloaded if they already exist locally and the figures won't be recreated if they already exist
+##     - True, the files will be redownloaded and the figures recreated no matter if they already exist locally or not
 ##############################################
     
 import numpy
@@ -32,9 +35,12 @@ from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
 ######### DEFINE PARAMETERS ###################
 
 #day
-year=2018
+year=2021
 month=9
 day=1
+
+#force (true) or not (false) the redownload of the data and the creation of the figures (even if any already exists)
+force=True
 
 #region for data selection
 lonmin=-180
@@ -180,63 +186,91 @@ doy = my_datetime.strftime('%j')
 #AMSR Sea ice
 os.system('mkdir -p '+str(rawdata_path)+'/seaice_amsr')
 filename='AMSR_U2_L3_SeaIce12km_B04_'+str(year)+str(month).zfill(2)+str(day).zfill(2)+'.he5'
-if os.path.isfile(str(rawdata_path)+'/seaice_amsr/'+filename)==False:
-    os.system('wget -P '+str(rawdata_path)+'/seaice_amsr/'+' https://n5eil01u.ecs.nsidc.org/AMSA/AU_SI12.001/'+str(year)+'.'+str(month).zfill(2)+'.'+str(day).zfill(2)+'/'+filename)   
+if force==True:
+    os.system('wget -0 -P '+str(rawdata_path)+'/seaice_amsr/'+' https://n5eil01u.ecs.nsidc.org/AMSA/AU_SI12.001/'+str(year)+'.'+str(month).zfill(2)+'.'+str(day).zfill(2)+'/'+filename)   
+else:
+    if os.path.isfile(str(rawdata_path)+'/seaice_amsr/'+filename)==False:
+        os.system('wget -P '+str(rawdata_path)+'/seaice_amsr/'+' https://n5eil01u.ecs.nsidc.org/AMSA/AU_SI12.001/'+str(year)+'.'+str(month).zfill(2)+'.'+str(day).zfill(2)+'/'+filename)   
 
 
 #MASIE
 os.system('mkdir -p '+str(rawdata_path)+'/iceextent_masie')
-if os.path.isfile(str(rawdata_path)+'/iceextent_masie/masie_lat_lon_4km.nc')==False:
-    os.system('wget -P '+str(rawdata_path)+'/iceextent_masie/'+' https://masie_web.apps.nsidc.org/pub/DATASETS/NOAA/G02186/ancillary/masie_lat_lon_4km.nc')
+if force==True:
+    os.system('wget -0 -P '+str(rawdata_path)+'/iceextent_masie/'+' https://masie_web.apps.nsidc.org/pub/DATASETS/NOAA/G02186/ancillary/masie_lat_lon_4km.nc')
+else:
+    if os.path.isfile(str(rawdata_path)+'/iceextent_masie/masie_lat_lon_4km.nc')==False:
+        os.system('wget -P '+str(rawdata_path)+'/iceextent_masie/'+' https://masie_web.apps.nsidc.org/pub/DATASETS/NOAA/G02186/ancillary/masie_lat_lon_4km.nc')
 
 filename='masie_all_r00_v01_'+str(year)+doy+'_4km.nc'
-if os.path.isfile(str(rawdata_path)+'/iceextent_masie/'+filename)==False:
-    os.system('wget -P '+str(rawdata_path)+'/iceextent_masie/'+' https://masie_web.apps.nsidc.org/pub/DATASETS/NOAA/G02186/netcdf/4km/'+str(year)+'/'+filename)   
+if force==True:
+    os.system('wget -0 -P '+str(rawdata_path)+'/iceextent_masie/'+' https://masie_web.apps.nsidc.org/pub/DATASETS/NOAA/G02186/netcdf/4km/'+str(year)+'/'+filename)   
+else:
+    if os.path.isfile(str(rawdata_path)+'/iceextent_masie/'+filename)==False:
+        os.system('wget -P '+str(rawdata_path)+'/iceextent_masie/'+' https://masie_web.apps.nsidc.org/pub/DATASETS/NOAA/G02186/netcdf/4km/'+str(year)+'/'+filename)   
 
 
 #OISST L4
 os.system('mkdir -p '+str(rawdata_path)+'/sst_oi')
 filename='oisst-avhrr-v02r01.'+str(year)+str(month).zfill(2)+str(day).zfill(2)+'.nc'
-if os.path.isfile(str(rawdata_path)+'/sst_oi/'+filename)==False:
-    os.system('wget -P '+str(rawdata_path)+'/sst_oi/'+' https://www.ncei.noaa.gov/data/sea-surface-temperature-optimum-interpolation/v2.1/access/avhrr/'+str(year)+str(month).zfill(2)+'/'+filename)   
+if force==True:
+    os.system('wget -0 -P '+str(rawdata_path)+'/sst_oi/'+' https://www.ncei.noaa.gov/data/sea-surface-temperature-optimum-interpolation/v2.1/access/avhrr/'+str(year)+str(month).zfill(2)+'/'+filename)   
+else:
+    if os.path.isfile(str(rawdata_path)+'/sst_oi/'+filename)==False:
+        os.system('wget -P '+str(rawdata_path)+'/sst_oi/'+' https://www.ncei.noaa.gov/data/sea-surface-temperature-optimum-interpolation/v2.1/access/avhrr/'+str(year)+str(month).zfill(2)+'/'+filename)   
 
 
 #SMAP JPL SSS L3 (file for 09/01 will be in the folder of 09/05 (8 day running mean))
 os.system('mkdir -p '+str(rawdata_path)+'/sss_smapjpl')
 filename='SMAP_L3_SSS_'+str(year)+str(month).zfill(2)+str(day).zfill(2)+'_8DAYS_V5.0.nc'
-if os.path.isfile(str(rawdata_path)+'/sss_smapjpl/'+filename)==False:
-    os.system('wget -P '+str(rawdata_path)+'/sss_smapjpl/'+' https://podaac-tools.jpl.nasa.gov/drive/files/allData/smap/L3/JPL/V5.0/8day_running/'+str(year)+'/'+str(int(doy)-4)+'/'+filename)   
+if force==True:
+    os.system('wget -0 -P '+str(rawdata_path)+'/sss_smapjpl/'+' https://archive.podaac.earthdata.nasa.gov/podaac-ops-cumulus-protected/SMAP_JPL_L3_SSS_CAP_8DAY-RUNNINGMEAN_V5/'+str(year)+'/'+str(int(doy)-4)+'/'+filename)
+else:
+    if os.path.isfile(str(rawdata_path)+'/sss_smapjpl/'+filename)==False:
+        os.system('wget -P '+str(rawdata_path)+'/sss_smapjpl/'+' https://archive.podaac.earthdata.nasa.gov/podaac-ops-cumulus-protected/SMAP_JPL_L3_SSS_CAP_8DAY-RUNNINGMEAN_V5/'+str(year)+'/'+str(int(doy)-4)+'/'+filename)
         
 
 #SMOS SSS L3
 os.system('mkdir -p '+str(rawdata_path)+'/sss_smos')
 filename='SMOS-arctic-LOCEAN-SSS-'+str(year)+'-'+str(month).zfill(2)+'-'+str(day).zfill(2)+'-v1.1AT-7days.nc'
-if os.path.isfile(str(rawdata_path)+'/sss_smos/'+filename)==False:
-    os.system('wget -P '+str(rawdata_path)+'/sss_smos/'+' ftp://ext-catds-cecos-locean@ftp.ifremer.fr/Ocean_products/SMOS_ARCTIC_SSS_L3_LOCEAN/netcdf_weekly_v1_1/'+filename)   
+if force==True:
+    os.system('wget -0 -P '+str(rawdata_path)+'/sss_smos/'+' ftp://ext-catds-cecos-locean@ftp.ifremer.fr/Ocean_products/SMOS_ARCTIC_SSS_L3_LOCEAN/netcdf_weekly_v1_1/'+filename)   
+else:
+    if os.path.isfile(str(rawdata_path)+'/sss_smos/'+filename)==False:
+        os.system('wget -P '+str(rawdata_path)+'/sss_smos/'+' ftp://ext-catds-cecos-locean@ftp.ifremer.fr/Ocean_products/SMOS_ARCTIC_SSS_L3_LOCEAN/netcdf_weekly_v1_1/'+filename)   
 
 
 #CCMP winds
 os.system('mkdir -p '+str(rawdata_path)+'/wind_ccmp')
 filename_dt='CCMP_Wind_Analysis_'+str(year)+str(month).zfill(2)+str(day).zfill(2)+'_V02.0_L3.0_RSS.nc'
 filename_nrt='CCMP_RT_Wind_Analysis_'+str(year)+str(month).zfill(2)+str(day).zfill(2)+'_V02.1_L3.0_RSS.nc'
-if len(glob.glob(str(rawdata_path)+'/wind_ccmp/'+filename_dt))<1:
-    os.system('wget -P '+str(rawdata_path)+'/wind_ccmp/'+' https://data.remss.com/ccmp/v02.0/Y'+str(year)+'/M'+str(month).zfill(2)+'/'+filename_dt)   
-    if len(glob.glob(str(rawdata_path)+'/wind_ccmp/'+filename_dt))<1 and len(glob.glob(str(rawdata_path)+'/wind_ccmp/'+filename_nrt))<1:
-        os.system('wget -P '+str(rawdata_path)+'/wind_ccmp/'+' https://data.remss.com/ccmp/v02.1.NRT/Y'+str(year)+'/M'+str(month).zfill(2)+'/'+filename_nrt)   
-    if len(glob.glob(str(rawdata_path)+'/wind_ccmp/'+filename_dt))>0 and len(glob.glob(str(rawdata_path)+'/wind_ccmp/'+filename_nrt))>0:
-        os.system('rm '+str(rawdata_path)+'/wind_ccmp/'+filename_nrt)
+if force==True:
+    os.system('wget -0 -P '+str(rawdata_path)+'/wind_ccmp/'+' https://data.remss.com/ccmp/v02.0/Y'+str(year)+'/M'+str(month).zfill(2)+'/'+filename_dt)   
+    if len(glob.glob(str(rawdata_path)+'/wind_ccmp/'+filename_dt))<1:
+        os.system('wget -0 -P '+str(rawdata_path)+'/wind_ccmp/'+' https://data.remss.com/ccmp/v02.1.NRT/Y'+str(year)+'/M'+str(month).zfill(2)+'/'+filename_nrt)   
+else:
+    if len(glob.glob(str(rawdata_path)+'/wind_ccmp/'+filename_dt))<1:
+        os.system('wget -P '+str(rawdata_path)+'/wind_ccmp/'+' https://data.remss.com/ccmp/v02.0/Y'+str(year)+'/M'+str(month).zfill(2)+'/'+filename_dt)   
+        if len(glob.glob(str(rawdata_path)+'/wind_ccmp/'+filename_dt))<1 and len(glob.glob(str(rawdata_path)+'/wind_ccmp/'+filename_nrt))<1:
+            os.system('wget -P '+str(rawdata_path)+'/wind_ccmp/'+' https://data.remss.com/ccmp/v02.1.NRT/Y'+str(year)+'/M'+str(month).zfill(2)+'/'+filename_nrt)   
+if len(glob.glob(str(rawdata_path)+'/wind_ccmp/'+filename_dt))>0 and len(glob.glob(str(rawdata_path)+'/wind_ccmp/'+filename_nrt))>0:
+    os.system('rm '+str(rawdata_path)+'/wind_ccmp/'+filename_nrt)
 
 
 #AVISO SLA
 os.system('mkdir -p '+str(rawdata_path)+'/sla_aviso')
 filename_dt='dt_global_allsat_phy_l4_'+str(year)+str(month).zfill(2)+str(day).zfill(2)+'_*nc'
 filename_nrt='nrt_global_allsat_phy_l4_'+str(year)+str(month).zfill(2)+str(day).zfill(2)+'_*nc'
-if len(glob.glob(str(rawdata_path)+'/sla_aviso/'+filename_dt))<1:
-    os.system('wget -P '+str(rawdata_path)+'/sla_aviso/'+' ftp://my.cmems-du.eu/Core/SEALEVEL_GLO_PHY_L4_MY_008_047/cmems_obs-sl_glo_phy-ssh_my_allsat-l4-duacs-0.25deg_P1D/'+str(year)+'/'+str(month).zfill(2)+'/'+filename_dt)   
-    if len(glob.glob(str(rawdata_path)+'/sla_aviso/'+filename_dt))<1 and len(glob.glob(str(rawdata_path)+'/sla_aviso/'+filename_nrt))<1:
-        os.system('wget -P '+str(rawdata_path)+'/sla_aviso/'+' ftp://nrt.cmems-du.eu/Core/SEALEVEL_GLO_PHY_L4_NRT_OBSERVATIONS_008_046/dataset-duacs-nrt-global-merged-allsat-phy-l4/'+str(year)+'/'+str(month).zfill(2)+'/'+filename_nrt)   
-    if len(glob.glob(str(rawdata_path)+'/sla_aviso/'+filename_dt))>0 and len(glob.glob(str(rawdata_path)+'/sla_aviso/'+filename_nrt))>0:
-        os.system('rm '+str(rawdata_path)+'/sla_aviso/'+filename_nrt)
+if force==True:
+    os.system('wget -0 -P '+str(rawdata_path)+'/sla_aviso/'+' ftp://my.cmems-du.eu/Core/SEALEVEL_GLO_PHY_L4_MY_008_047/cmems_obs-sl_glo_phy-ssh_my_allsat-l4-duacs-0.25deg_P1D/'+str(year)+'/'+str(month).zfill(2)+'/'+filename_dt)   
+    if len(glob.glob(str(rawdata_path)+'/sla_aviso/'+filename_dt))<1:
+        os.system('wget -0 -P '+str(rawdata_path)+'/sla_aviso/'+' ftp://nrt.cmems-du.eu/Core/SEALEVEL_GLO_PHY_L4_NRT_OBSERVATIONS_008_046/dataset-duacs-nrt-global-merged-allsat-phy-l4/'+str(year)+'/'+str(month).zfill(2)+'/'+filename_nrt)   
+else:
+    if len(glob.glob(str(rawdata_path)+'/sla_aviso/'+filename_dt))<1:
+        os.system('wget -P '+str(rawdata_path)+'/sla_aviso/'+' ftp://my.cmems-du.eu/Core/SEALEVEL_GLO_PHY_L4_MY_008_047/cmems_obs-sl_glo_phy-ssh_my_allsat-l4-duacs-0.25deg_P1D/'+str(year)+'/'+str(month).zfill(2)+'/'+filename_dt)   
+        if len(glob.glob(str(rawdata_path)+'/sla_aviso/'+filename_dt))<1 and len(glob.glob(str(rawdata_path)+'/sla_aviso/'+filename_nrt))<1:
+            os.system('wget -P '+str(rawdata_path)+'/sla_aviso/'+' ftp://nrt.cmems-du.eu/Core/SEALEVEL_GLO_PHY_L4_NRT_OBSERVATIONS_008_046/dataset-duacs-nrt-global-merged-allsat-phy-l4/'+str(year)+'/'+str(month).zfill(2)+'/'+filename_nrt)   
+if len(glob.glob(str(rawdata_path)+'/sla_aviso/'+filename_dt))>0 and len(glob.glob(str(rawdata_path)+'/sla_aviso/'+filename_nrt))>0:
+    os.system('rm '+str(rawdata_path)+'/sla_aviso/'+filename_nrt)
         
         
 
