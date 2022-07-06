@@ -9,9 +9,10 @@
 ##     - OISST
 ##     - SMAP JPL SSS
 ##     - SMOS LOCEAN Arctic SSS
+##     - CCMP winds
 ##     - Aviso SLA
 ##
-## Plot these data in the Beaufort Sea and save the figure locally
+## Plot these data in the Beaufort Sea and save the figures locally
 ##############################################
     
 import numpy
@@ -51,13 +52,11 @@ latmapmax=78
 #paths
 # SEVERINE
 rawdata_path=Path('/Users/severinf/Data/SASSIE/satellite/') 
-subsetdata_path=Path('/Users/severinf/Data/SASSIE/satellite/arctic/') 
-figures_path=Path('/Users/severinf/Figures/SASSIE/') 
+figures_path=Path('/Users/severinf/Figures/SASSIE/cruise/') 
 
 # KYLA CLOUD
-rawdata_path=Path('/home/jovyan/data/SASSIE/satellite/') 
-subsetdata_path=Path('/home/jovyan/data/SASSIE/satellite/arctic/') 
-figures_path=Path('/home/jovyan/figures/SASSIE') 
+# rawdata_path=Path('/home/jovyan/data/SASSIE/satellite/')
+# figures_path=Path('/home/jovyan/figures/SASSIE')
 
 
 
@@ -158,8 +157,8 @@ def map(x,y,data,vmin,vmax,**karg):
         fmt = {}
         plt.clabel(cc, cc.levels, fmt=' {:.0f} '.format, inline=True, fontsize=10,colors='m')
     if 'u' in karg:  
-        q=plt.quiver(x[::5].values,y[::2].values,karg['u'][::2,::5].values,karg['v'][::2,::5].values,scale=400,transform=cartopy.crs.PlateCarree())
-        qk= plt.quiverkey (q,0.95,-0.07,10,'10cm/s',labelpos='N')
+        q=plt.quiver(x[::5].values,y[::2].values,karg['u'][::2,::5].values,karg['v'][::2,::5].values,scale=karg['scale'],transform=cartopy.crs.PlateCarree())
+        qk= plt.quiverkey (q,0.95,-0.07,10,'10'+karg['unit_vector'],labelpos='N')
                     
     cbar_ax = fig.add_axes([0.1, 0.1, 0.8, 0.04])
     h=plt.colorbar(pp, cax=cbar_ax,orientation='horizontal',ax=ax)
@@ -184,6 +183,7 @@ filename='AMSR_U2_L3_SeaIce12km_B04_'+str(year)+str(month).zfill(2)+str(day).zfi
 if os.path.isfile(str(rawdata_path)+'/seaice_amsr/'+filename)==False:
     os.system('wget -P '+str(rawdata_path)+'/seaice_amsr/'+' https://n5eil01u.ecs.nsidc.org/AMSA/AU_SI12.001/'+str(year)+'.'+str(month).zfill(2)+'.'+str(day).zfill(2)+'/'+filename)   
 
+
 #MASIE
 os.system('mkdir -p '+str(rawdata_path)+'/iceextent_masie')
 if os.path.isfile(str(rawdata_path)+'/iceextent_masie/masie_lat_lon_4km.nc')==False:
@@ -206,6 +206,25 @@ os.system('mkdir -p '+str(rawdata_path)+'/sss_smapjpl')
 filename='SMAP_L3_SSS_'+str(year)+str(month).zfill(2)+str(day).zfill(2)+'_8DAYS_V5.0.nc'
 if os.path.isfile(str(rawdata_path)+'/sss_smapjpl/'+filename)==False:
     os.system('wget -P '+str(rawdata_path)+'/sss_smapjpl/'+' https://podaac-tools.jpl.nasa.gov/drive/files/allData/smap/L3/JPL/V5.0/8day_running/'+str(year)+'/'+str(int(doy)-4)+'/'+filename)   
+        
+
+#SMOS SSS L3
+os.system('mkdir -p '+str(rawdata_path)+'/sss_smos')
+filename='SMOS-arctic-LOCEAN-SSS-'+str(year)+'-'+str(month).zfill(2)+'-'+str(day).zfill(2)+'-v1.1AT-7days.nc'
+if os.path.isfile(str(rawdata_path)+'/sss_smos/'+filename)==False:
+    os.system('wget -P '+str(rawdata_path)+'/sss_smos/'+' ftp://ext-catds-cecos-locean@ftp.ifremer.fr/Ocean_products/SMOS_ARCTIC_SSS_L3_LOCEAN/netcdf_weekly_v1_1/'+filename)   
+
+
+#CCMP winds
+os.system('mkdir -p '+str(rawdata_path)+'/wind_ccmp')
+filename_dt='CCMP_Wind_Analysis_'+str(year)+str(month).zfill(2)+str(day).zfill(2)+'_V02.0_L3.0_RSS.nc'
+filename_nrt='CCMP_RT_Wind_Analysis_'+str(year)+str(month).zfill(2)+str(day).zfill(2)+'_V02.1_L3.0_RSS.nc'
+if len(glob.glob(str(rawdata_path)+'/wind_ccmp/'+filename_dt))<1:
+    os.system('wget -P '+str(rawdata_path)+'/wind_ccmp/'+' https://data.remss.com/ccmp/v02.0/Y'+str(year)+'/M'+str(month).zfill(2)+'/'+filename_dt)   
+    if len(glob.glob(str(rawdata_path)+'/wind_ccmp/'+filename_dt))<1 and len(glob.glob(str(rawdata_path)+'/wind_ccmp/'+filename_nrt))<1:
+        os.system('wget -P '+str(rawdata_path)+'/wind_ccmp/'+' https://data.remss.com/ccmp/v02.1.NRT/Y'+str(year)+'/M'+str(month).zfill(2)+'/'+filename_nrt)   
+    if len(glob.glob(str(rawdata_path)+'/wind_ccmp/'+filename_dt))>0 and len(glob.glob(str(rawdata_path)+'/wind_ccmp/'+filename_nrt))>0:
+        os.system('rm '+str(rawdata_path)+'/wind_ccmp/'+filename_nrt)
 
 
 #AVISO SLA
@@ -219,17 +238,7 @@ if len(glob.glob(str(rawdata_path)+'/sla_aviso/'+filename_dt))<1:
     if len(glob.glob(str(rawdata_path)+'/sla_aviso/'+filename_dt))>0 and len(glob.glob(str(rawdata_path)+'/sla_aviso/'+filename_nrt))>0:
         os.system('rm '+str(rawdata_path)+'/sla_aviso/'+filename_nrt)
         
-
-#SMOS SSS L3
-os.system('mkdir -p '+str(rawdata_path)+'/sss_smos')
-filename='SMOS-arctic-LOCEAN-SSS-'+str(year)+'-'+str(month).zfill(2)+'-'+str(day).zfill(2)+'-v1.1AT-7days.nc'
-if os.path.isfile(str(rawdata_path)+'/sss_smos/'+filename)==False:
-    os.system('wget -P '+str(rawdata_path)+'/sss_smos/'+' ftp://ext-catds-cecos-locean@ftp.ifremer.fr/Ocean_products/SMOS_ARCTIC_SSS_L3_LOCEAN/netcdf_weekly_v1_1/'+filename)   
-
-
-#ERA5 winds: https://cds.climate.copernicus.eu/cdsapp#!/dataset/reanalysis-era5-single-levels?tab=form
-
-
+        
 
 ######## Load and plot Data ######################
         
@@ -283,6 +292,33 @@ if os.path.isfile(str(figures_path)+'/mapbeaufort_sss_smapjpl_'+str(year)+str(mo
             palette='jet',unit='psu',land=True,coastline=True,
             title='SSS SMAP JPL - '+str(year)+'/'+str(month).zfill(2)+'/'+str(day).zfill(2),
             fileout=str(figures_path)+'/mapbeaufort_sss_smapjpl_'+str(year)+str(month).zfill(2)+str(day).zfill(2)+'.png')
+    
+
+#SMOS SSS L3 #Updates to make for Alex and Jacqueline's NRT version?
+if os.path.isfile(str(figures_path)+'/mapbeaufort_sss_smos_'+str(year)+str(month).zfill(2)+str(day).zfill(2)+'.png')==False:
+    filename = str(rawdata_path)+'/sss_smos/SMOS-arctic-LOCEAN-SSS-'+str(year)+'-'+str(month).zfill(2)+'-'+str(day).zfill(2)+'-v1.1AT-7days.nc'
+    if os.path.isfile(filename):
+        ds = xr.open_dataset(filename)
+        
+        map(ds.longitude,ds.latitude,ds.smos_sss.squeeze(),20,35,
+            palette='jet',unit='psu',land=True,coastline=True,
+            title='SSS SMOS - '+str(year)+'/'+str(month).zfill(2)+'/'+str(day).zfill(2),
+            fileout=str(figures_path)+'/mapbeaufort_sss_smos_'+str(year)+str(month).zfill(2)+str(day).zfill(2)+'.png')
+
+
+#CCMP wind
+if os.path.isfile(str(figures_path)+'/mapbeaufort_wind_ccmp_'+str(year)+str(month).zfill(2)+str(day).zfill(2)+'_0.png')==False:
+    filename = glob.glob(str(rawdata_path)+'/wind_ccmp/*_Wind_Analysis_'+str(year)+str(month).zfill(2)+str(day).zfill(2)+'_V*_L3.0_RSS.nc')[0]
+    if os.path.isfile(filename):
+        ds = xr.open_dataset(filename)
+        for t in range(0,len(ds.time)):
+            ts = datetime.datetime.strptime(str(ds.time[t].values),'%Y-%m-%dT%H:%M:%S.%f000').strftime("%Y-%m-%d %H:%M:%S") 
+            
+            map(ds.longitude,ds.latitude,numpy.sqrt(ds.uwnd[t,:,:].squeeze()**2+ds.vwnd[t,:,:].squeeze()**2).squeeze(),0,15,
+                palette='jet',unit='m/s',land=True,coastline=True,
+                u=ds.uwnd[t,:,:].squeeze(),v=ds.vwnd[t,:,:].squeeze(),unit_vector='m/s',scale=200,
+                title='Wind CCMP - '+ts,
+                fileout=str(figures_path)+'/mapbeaufort_wind_ccmp_'+str(year)+str(month).zfill(2)+str(day).zfill(2)+'_'+str(t)+'.png')
 
 
 #AVISO SLA
@@ -293,23 +329,9 @@ if os.path.isfile(str(figures_path)+'/mapbeaufort_sla_aviso_'+str(year)+str(mont
 
         map(ds.longitude,ds.latitude,ds.sla.squeeze()*10**2,-25,25,
             palette='seismic',unit='cm',land=True,coastline=True,
-            u=ds.ugos.squeeze()*10**2,v=ds.vgos.squeeze()*10**2,
+            u=ds.ugos.squeeze()*10**2,v=ds.vgos.squeeze()*10**2,unit_vector='cm/s',scale=400,
             title='SLA Aviso - '+str(year)+'/'+str(month).zfill(2)+'/'+str(day).zfill(2),
             fileout=str(figures_path)+'/mapbeaufort_sla_aviso_'+str(year)+str(month).zfill(2)+str(day).zfill(2)+'.png')
-    
-
-#SMOS SSS L3 #Updates to make for Alex and Jacqueline's NRT version?
-if os.path.isfile(str(figures_path)+'/mapbeaufort_sss_smos_'+str(year)+str(month).zfill(2)+str(day).zfill(2)+'.png')==False:
-    filename = str(rawdata_path)+'/sss_smos/SMOS-arctic-LOCEAN-SSS-'+str(year)+'-'+str(month).zfill(2)+'-'+str(day).zfill(2)+'-v1.1AT-7days.nc'
-    if os.path.isfile(filename):
-        ds = xr.open_dataset(filename)
-
-        map(ds.longitude,ds.latitude,ds.smos_sss.squeeze(),20,35,
-            palette='jet',unit='psu',land=True,coastline=True,
-            title='SSS SMOS - '+str(year)+'/'+str(month).zfill(2)+'/'+str(day).zfill(2),
-            fileout=str(figures_path)+'/mapbeaufort_sss_smos_'+str(year)+str(month).zfill(2)+str(day).zfill(2)+'.png')
-
-
 
 
 
