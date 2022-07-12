@@ -167,10 +167,11 @@ def map(x,y,data,vmin,vmax,**karg):
         qk= plt.quiverkey (q,0.95,-0.07,10,'10'+karg['unit_vector'],labelpos='N')
 
     filename=str(rawdata_path)+'/Ship_track.xlsx'
-    df = pd.read_excel(filename,header=None)
-    plt.plot(df.iloc[:,4],df.iloc[:,3],linestyle='--',color='#808080',marker='o',markersize=6,markerfacecolor='#808080',markeredgecolor='k',transform=cartopy.crs.PlateCarree())                    
-    for t in range(df.shape[0]):
-        plt.annotate(str(df.iloc[t,1]).zfill(2)+'/'+str(df.iloc[t,2]).zfill(2), xy=(df.iloc[t,4],df.iloc[t,3]),fontsize=10,color='#808080',xycoords=ccrs.PlateCarree()._as_mpl_transform(ax))
+    if os.path.isfile(filename):
+        df = pd.read_excel(filename,header=None)
+        plt.plot(df.iloc[:,4],df.iloc[:,3],linestyle='--',color='#808080',marker='o',markersize=6,markerfacecolor='#808080',markeredgecolor='k',transform=cartopy.crs.PlateCarree())                    
+        for t in range(df.shape[0]):
+            plt.annotate(str(df.iloc[t,1]).zfill(2)+'/'+str(df.iloc[t,2]).zfill(2), xy=(df.iloc[t,4],df.iloc[t,3]),fontsize=10,color='#808080',xycoords=ccrs.PlateCarree()._as_mpl_transform(ax))
     cbar_ax = fig.add_axes([0.1, 0.1, 0.8, 0.04])
     h=plt.colorbar(pp, cax=cbar_ax,orientation='horizontal',ax=ax)
     h.ax.tick_params(labelsize=20)
