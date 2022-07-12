@@ -35,14 +35,7 @@ import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
 
-######### DEFINE PARAMETERS ###################
-
-#date - DO NOT MODIFY unless you need a specific date, then modify "year, month, day"
-time=datetime.date.today()
-year=time.year
-month=time.month
-day=time.day
-
+######### TO DEFINE ###################
 
 #paths
 # SEVERINE
@@ -53,6 +46,14 @@ figures_path=Path('/Users/severinf/Figures/SASSIE/cruise/')
 # rawdata_path=Path('/home/jovyan/data/SASSIE/satellite/')
 # figures_path=Path('/home/jovyan/figures/SASSIE')
 
+
+######### OTHER PARAMETERS ###################
+
+#date
+time=datetime.date.today()
+year=time.year
+month=time.month
+day=time.day
 
 #region for data selection
 lonmin=-180
