@@ -147,11 +147,11 @@ def map(x,y,data,vmin,vmax,**karg):
             ax.coastlines('10m',zorder=2)
     ax.add_feature(cfeature.RIVERS,facecolor='blue',zorder=3)
     gl = ax.gridlines(draw_labels=True, x_inline=False, y_inline=False)
-    gl.xlocator = mticker.FixedLocator(numpy.arange(lonmapmin-15,lonmapmax+15,15))
+    gl.xlocator = mticker.FixedLocator(numpy.arange(lonmapmin-10,lonmapmax+15,2))
     gl.xformatter = LONGITUDE_FORMATTER
     gl.xlabel_style = {'size': 14, 'color': 'k','rotation':0}
     gl.yformatter = LATITUDE_FORMATTER
-    gl.ylocator = mticker.FixedLocator(numpy.arange(latmapmin-15,latmapmax+15,2))
+    gl.ylocator = mticker.FixedLocator(numpy.arange(latmapmin-1,latmapmax+1,0.5))
     gl.ylabel_style = {'size': 14, 'color': 'gray','rotation':0}
 
     pp = ax.pcolormesh(x, y, data, 
@@ -166,7 +166,7 @@ def map(x,y,data,vmin,vmax,**karg):
         plt.clabel(cc, cc.levels, fmt=karg['label_contour'], inline=True, fontsize=10,colors='m')
     if 'u' in karg:  
         q=plt.quiver(x[::5].values,y[::2].values,karg['u'][::2,::5].values,karg['v'][::2,::5].values,scale=karg['scale'],transform=ccrs.PlateCarree())
-        qk= plt.quiverkey (q,0.95,-0.07,10,'10'+karg['unit_vector'],labelpos='N')
+        qk= plt.quiverkey (q,0.95,-0.07,10,'10'+karg['unit_vector'],labelpos='E')
 
     filename=str(rawdata_path)+'/Ship_track.xlsx'
     if os.path.isfile(filename):
