@@ -34,6 +34,7 @@ import cartopy
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
+import pysftp
 
 ######### TO DEFINE ###################
 
@@ -67,6 +68,7 @@ lonmapmin=-165
 lonmapmax=-120
 latmapmin=68
 latmapmax=78
+
 
 
 ######## FUNCTIONS ##########################
@@ -190,23 +192,25 @@ def map(x,y,data,vmin,vmax,**karg):
 doy = time.timetuple().tm_yday
 
 #Ship tracks from ftp site ######################
-# os.system('wget -N -P '+str(rawdata_path)+'/'+' ftp:// /Ship_track.xlsx'
-
+os.system('lftp sftp://sassie@ftp.polarscience.org/ -e "set xfer:clobber on; lcd '+str(rawdata_path)+'/; get FTP/Ship_track.xlsx; exit"')
 
 
 #AMSR Sea ice ############################################
+# create folders locally if don't exist
 os.system('mkdir -p '+str(rawdata_path)+'/seaice_amsr')
 os.system('mkdir -p '+str(figures_path)+'/seaice_amsr')
 
+# download the data locally
 filename_si='AMSR_U2_L3_SeaIce12km_B04_'+str(year)+str(month).zfill(2)+str(day).zfill(2)+'.he5'
 i=0
 time_tmp=time - datetime.timedelta(days=i)
-while os.path.isfile(str(rawdata_path)+'/seaice_amsr/'+filename_si)==False and i<8:
+while os.path.isfile(str(rawdata_path)+'/seaice_amsr/'+filename_si)==False and i<9:
     time_tmp=time - datetime.timedelta(days=i)
     filename_si='AMSR_U2_L3_SeaIce12km_B04_'+str(time_tmp.year)+str(time_tmp.month).zfill(2)+str(time_tmp.day).zfill(2)+'.he5'
     os.system('wget -N -P '+str(rawdata_path)+'/seaice_amsr/'+' https://n5eil01u.ecs.nsidc.org/AMSA/AU_SI12.001/'+str(time_tmp.year)+'.'+str(time_tmp.month).zfill(2)+'.'+str(time_tmp.day).zfill(2)+'/'+filename_si)   
     i=i+1
 
+# make a map and save the figure locally
 if os.path.isfile(str(rawdata_path)+'/seaice_amsr/'+filename_si):
     datestr_ice=datetime.datetime.strptime(str(time_tmp),'%Y-%m-%d').strftime("%m/%d") 
     dsc = xr.open_dataset(str(rawdata_path)+'/seaice_amsr/'+filename_si,group='HDFEOS/GRIDS/NpPolarGrid12km')
@@ -217,198 +221,252 @@ if os.path.isfile(str(rawdata_path)+'/seaice_amsr/'+filename_si):
         level_contour=15,label_contour=datestr_ice,x_contour=dsc.lon,y_contour=dsc.lat,data_contour=dsd.SI_12km_NH_ICECON_DAY.squeeze(),
         title='AMSR Sea ice concentration - '+str(time_tmp.year)+'/'+str(time_tmp.month).zfill(2)+'/'+str(time_tmp.day).zfill(2),
         fileout=str(figures_path)+'/seaice_amsr/sic_amsr_'+str(time_tmp.year)+str(time_tmp.month).zfill(2)+str(time_tmp.day).zfill(2)+'.png')
+            
+    # upload the data and figure to the ftp website
+    os.system('lftp sftp://sassie@ftp.polarscience.org/ -e "cd /FTP/satellite/Figures/seaice_amsr/; put '+str(figures_path)+'/seaice_amsr/sic_amsr_'+str(time_tmp.year)+str(time_tmp.month).zfill(2)+str(time_tmp.day).zfill(2)+'.png; bye"')
+    os.system('lftp sftp://sassie@ftp.polarscience.org/ -e "cd /FTP/satellite/Data/seaice_amsr/; put '+str(rawdata_path)+'/seaice_amsr/'+filename_si+'; bye"')
+
 
 
 #MASIE ############################################
+# create folders locally if don't exist
 os.system('mkdir -p '+str(rawdata_path)+'/iceextent_masie')
 os.system('mkdir -p '+str(figures_path)+'/iceextent_masie')
 
+# download the data locally
 if os.path.isfile(str(rawdata_path)+'/iceextent_masie/masie_lat_lon_4km.nc')==False:
     os.system('wget -N -P '+str(rawdata_path)+'/iceextent_masie/'+' https://masie_web.apps.nsidc.org/pub/DATASETS/NOAA/G02186/ancillary/masie_lat_lon_4km.nc')
+    # upload the coordinate data to the ftp website
+os.system('lftp sftp://sassie@ftp.polarscience.org/ -e "cd /FTP/satellite/Data/iceextent_masie/; put '+str(rawdata_path)+'/iceextent_masie/masie_lat_lon_4km.nc; bye"')
 
 filename='masie_all_r00_v01_'+str(year)+str(doy)+'_4km.nc'
 i=0
 time_tmp=time - datetime.timedelta(days=i)
-while os.path.isfile(str(rawdata_path)+'/iceextent_masie/'+filename)==False and i<8:
+while os.path.isfile(str(rawdata_path)+'/iceextent_masie/'+filename)==False and i<9:
     time_tmp=time - datetime.timedelta(days=i)
     filename='masie_all_r00_v01_'+str(time_tmp.year)+str(time_tmp.timetuple().tm_yday)+'_4km.nc'
     os.system('wget -N -P '+str(rawdata_path)+'/iceextent_masie/'+' https://masie_web.apps.nsidc.org/pub/DATASETS/NOAA/G02186/netcdf/4km/'+str(time_tmp.year)+'/'+filename)   
     i=i+1
 
+# make a map and save the figure locally
 ds_masie = xr.open_dataset(str(rawdata_path)+'/iceextent_masie/masie_lat_lon_4km.nc')
 if os.path.isfile(str(rawdata_path)+'/iceextent_masie/'+filename):
-        ds = xr.open_dataset(str(rawdata_path)+'/iceextent_masie/'+filename)
-        if os.path.isfile(str(rawdata_path)+'/seaice_amsr/'+filename_si):
-            map(ds_masie.longitude,ds_masie.latitude,ds.sea_ice_extent.squeeze()[:-1,:-1],0,5,
-                palette='jet',unit='0:missing+not SI; 1:ocean; 2:land; 3:SI; 4:coastline; 5:lake',land=False,coastline=False,
-                level_contour=15,label_contour=datestr_ice,x_contour=dsc.lon,y_contour=dsc.lat,data_contour=dsd.SI_12km_NH_ICECON_DAY.squeeze(),
-                title='Ice extent MASIE - '+str(time_tmp.year)+'/'+str(time_tmp.month).zfill(2)+'/'+str(time_tmp.day).zfill(2),
-                fileout=str(figures_path)+'/iceextent_masie/iceextent_masie_'+str(time_tmp.year)+str(time_tmp.month).zfill(2)+str(time_tmp.day).zfill(2)+'.png')
-        else:
-            map(ds_masie.longitude,ds_masie.latitude,ds.sea_ice_extent.squeeze()[:-1,:-1],0,5,
-                palette='jet',unit='0:missing+not SI; 1:ocean; 2:land; 3:SI; 4:coastline; 5:lake',land=False,coastline=False,
-                title='Ice extent MASIE - '+str(time_tmp.year)+'/'+str(time_tmp.month).zfill(2)+'/'+str(time_tmp.day).zfill(2),
-                fileout=str(figures_path)+'/iceextent_masie/iceextent_masie_'+str(time_tmp.year)+str(time_tmp.month).zfill(2)+str(time_tmp.day).zfill(2)+'.png')
+    ds = xr.open_dataset(str(rawdata_path)+'/iceextent_masie/'+filename)
+    if os.path.isfile(str(rawdata_path)+'/seaice_amsr/'+filename_si):
+        map(ds_masie.longitude,ds_masie.latitude,ds.sea_ice_extent.squeeze()[:-1,:-1],0,5,
+            palette='jet',unit='0:missing+not SI; 1:ocean; 2:land; 3:SI; 4:coastline; 5:lake',land=False,coastline=False,
+            level_contour=15,label_contour=datestr_ice,x_contour=dsc.lon,y_contour=dsc.lat,data_contour=dsd.SI_12km_NH_ICECON_DAY.squeeze(),
+            title='Ice extent MASIE - '+str(time_tmp.year)+'/'+str(time_tmp.month).zfill(2)+'/'+str(time_tmp.day).zfill(2),
+            fileout=str(figures_path)+'/iceextent_masie/iceextent_masie_'+str(time_tmp.year)+str(time_tmp.month).zfill(2)+str(time_tmp.day).zfill(2)+'.png')
+    else:
+        map(ds_masie.longitude,ds_masie.latitude,ds.sea_ice_extent.squeeze()[:-1,:-1],0,5,
+            palette='jet',unit='0:missing+not SI; 1:ocean; 2:land; 3:SI; 4:coastline; 5:lake',land=False,coastline=False,
+            title='Ice extent MASIE - '+str(time_tmp.year)+'/'+str(time_tmp.month).zfill(2)+'/'+str(time_tmp.day).zfill(2),
+            fileout=str(figures_path)+'/iceextent_masie/iceextent_masie_'+str(time_tmp.year)+str(time_tmp.month).zfill(2)+str(time_tmp.day).zfill(2)+'.png')
+            
+    # upload the data and figure to the ftp website
+    os.system('lftp sftp://sassie@ftp.polarscience.org/ -e "cd /FTP/satellite/Figures/iceextent_masie/; put '+str(figures_path)+'/iceextent_masie/iceextent_masie_'+str(time_tmp.year)+str(time_tmp.month).zfill(2)+str(time_tmp.day).zfill(2)+'.png; bye"')
+    os.system('lftp sftp://sassie@ftp.polarscience.org/ -e "cd /FTP/satellite/Data/iceextent_masie/; put '+str(rawdata_path)+'/iceextent_masie/'+filename+'; bye"')
 
 
 
 #OISST L4 ############################################
+# create folders locally if don't exist
 os.system('mkdir -p '+str(rawdata_path)+'/sst_oi')
 os.system('mkdir -p '+str(figures_path)+'/sst_oi')
 
+# download the data locally
 filename='oisst-avhrr-v02r01.'+str(year)+str(month).zfill(2)+str(day).zfill(2)+'_preliminary.nc'
 i=0
 time_tmp=time - datetime.timedelta(days=i)
-while os.path.isfile(str(rawdata_path)+'/sst_oi/'+filename)==False and i<8:
+while os.path.isfile(str(rawdata_path)+'/sst_oi/'+filename)==False and i<9:
     time_tmp=time - datetime.timedelta(days=i)
     filename='oisst-avhrr-v02r01.'+str(time_tmp.year)+str(time_tmp.month).zfill(2)+str(time_tmp.day).zfill(2)+'_preliminary.nc'
     os.system('wget -N -P '+str(rawdata_path)+'/sst_oi/'+' https://www.ncei.noaa.gov/data/sea-surface-temperature-optimum-interpolation/v2.1/access/avhrr/'+str(time_tmp.year)+str(time_tmp.month).zfill(2)+'/'+filename)   
     i=i+1
 
+# make a map and save the figure locally
 if os.path.isfile(str(rawdata_path)+'/sst_oi/'+filename):
-        ds = xr.open_dataset(str(rawdata_path)+'/sst_oi/'+filename).sel(lon=slice(lonmin+360,lonmax+360), lat=slice(latmin,latmax))
-        if os.path.isfile(str(rawdata_path)+'/seaice_amsr/'+filename_si):
-            map(ds.lon,ds.lat,ds.sst.squeeze(),-2,10,
-                palette='jet',unit='degC',land=True,coastline=True,
-                level_contour=15,label_contour=datestr_ice,x_contour=dsc.lon,y_contour=dsc.lat,data_contour=dsd.SI_12km_NH_ICECON_DAY.squeeze(),
-                title='SST OI - '+str(time_tmp.year)+'/'+str(time_tmp.month).zfill(2)+'/'+str(time_tmp.day).zfill(2),
-                fileout=str(figures_path)+'/sst_oi/sst_oi_'+str(time_tmp.year)+str(time_tmp.month).zfill(2)+str(time_tmp.day).zfill(2)+'.png')
-        else:
-            map(ds.lon,ds.lat,ds.sst.squeeze(),-2,10,
-                palette='jet',unit='degC',land=True,coastline=True,
-                title='SST OI - '+str(time_tmp.year)+'/'+str(time_tmp.month).zfill(2)+'/'+str(time_tmp.day).zfill(2),
-                fileout=str(figures_path)+'/sst_oi/sst_oi_'+str(time_tmp.year)+str(time_tmp.month).zfill(2)+str(time_tmp.day).zfill(2)+'.png')
-
-
+    ds = xr.open_dataset(str(rawdata_path)+'/sst_oi/'+filename).sel(lon=slice(lonmin+360,lonmax+360), lat=slice(latmin,latmax))
+    if os.path.isfile(str(rawdata_path)+'/seaice_amsr/'+filename_si):
+        map(ds.lon,ds.lat,ds.sst.squeeze(),-2,10,
+            palette='jet',unit='degC',land=True,coastline=True,
+            level_contour=15,label_contour=datestr_ice,x_contour=dsc.lon,y_contour=dsc.lat,data_contour=dsd.SI_12km_NH_ICECON_DAY.squeeze(),
+            title='SST OI - '+str(time_tmp.year)+'/'+str(time_tmp.month).zfill(2)+'/'+str(time_tmp.day).zfill(2),
+            fileout=str(figures_path)+'/sst_oi/sst_oi_'+str(time_tmp.year)+str(time_tmp.month).zfill(2)+str(time_tmp.day).zfill(2)+'.png')
+    else:
+        map(ds.lon,ds.lat,ds.sst.squeeze(),-2,10,
+            palette='jet',unit='degC',land=True,coastline=True,
+            title='SST OI - '+str(time_tmp.year)+'/'+str(time_tmp.month).zfill(2)+'/'+str(time_tmp.day).zfill(2),
+            fileout=str(figures_path)+'/sst_oi/sst_oi_'+str(time_tmp.year)+str(time_tmp.month).zfill(2)+str(time_tmp.day).zfill(2)+'.png')
+    #save sliced data
+    ds.to_netcdf(str(rawdata_path)+'/sst_oi/oisst-avhrr-v02r01.'+str(year)+str(month).zfill(2)+str(day).zfill(2)+'_preliminary_subset.nc')
+            
+    # upload the data and figure to the ftp website
+    os.system('lftp sftp://sassie@ftp.polarscience.org/ -e "cd /FTP/satellite/Figures/sst_oi/; put '+str(figures_path)+'/sst_oi/sst_oi_'+str(time_tmp.year)+str(time_tmp.month).zfill(2)+str(time_tmp.day).zfill(2)+'.png; bye"')
+    os.system('lftp sftp://sassie@ftp.polarscience.org/ -e "cd /FTP/satellite/Data/sst_oi/; put '+str(rawdata_path)+'/sst_oi/oisst-avhrr-v02r01.'+str(year)+str(month).zfill(2)+str(day).zfill(2)+'_preliminary_subset.nc; bye"')
+        
+        
+        
 #SMAP JPL SSS L3 ############################################
+# create folders locally if don't exist
 #(file for 09/01 will be in the folder of 09/05 (8 day running mean))
 os.system('mkdir -p '+str(rawdata_path)+'/sss_smapjpl')
 os.system('mkdir -p '+str(figures_path)+'/sss_smapjpl')
 
+# download the data locally
 filename='SMAP_L3_SSS_'+str(year)+str(month).zfill(2)+str(day).zfill(2)+'_8DAYS_V5.0.nc'
 i=0
 time_tmp=time - datetime.timedelta(days=i)
-while os.path.isfile(str(rawdata_path)+'/sss_smapjpl/'+filename)==False and i<8:
+while os.path.isfile(str(rawdata_path)+'/sss_smapjpl/'+filename)==False and i<9:
     time_tmp=time - datetime.timedelta(days=i)
     filename='SMAP_L3_SSS_'+str(time_tmp.year)+str(time_tmp.month).zfill(2)+str(time_tmp.day).zfill(2)+'_8DAYS_V5.0.nc'
     os.system('wget -N -P '+str(rawdata_path)+'/sss_smapjpl/'+' https://archive.podaac.earthdata.nasa.gov/podaac-ops-cumulus-protected/SMAP_JPL_L3_SSS_CAP_8DAY-RUNNINGMEAN_V5/'+str(time_tmp.year)+'/'+str(int(time_tmp.timetuple().tm_yday)-4)+'/'+filename)
     i=i+1
 
+# make a map and save the figure locally
 if os.path.isfile(str(rawdata_path)+'/sss_smapjpl/'+filename):
-        ds = xr.open_dataset(str(rawdata_path)+'/sss_smapjpl/'+filename).sel(longitude=slice(lonmin,lonmax), latitude=slice(latmax,latmin))
-        if os.path.isfile(str(rawdata_path)+'/seaice_amsr/'+filename_si):
-            map(ds.longitude,ds.latitude,ds.smap_sss.squeeze(),20,35,
-                palette='jet',unit='psu',land=True,coastline=True,
-                level_contour=15,label_contour=datestr_ice,x_contour=dsc.lon,y_contour=dsc.lat,data_contour=dsd.SI_12km_NH_ICECON_DAY.squeeze(),
-                title='SSS SMAP JPL - '+str(time_tmp.year)+'/'+str(time_tmp.month).zfill(2)+'/'+str(time_tmp.day).zfill(2),
-                fileout=str(figures_path)+'/sss_smapjpl/sss_smapjpl_'+str(time_tmp.year)+str(time_tmp.month).zfill(2)+str(time_tmp.day).zfill(2)+'.png')
-        else:
-            map(ds.longitude,ds.latitude,ds.smap_sss.squeeze(),20,35,
-                palette='jet',unit='psu',land=True,coastline=True,
-                title='SSS SMAP JPL - '+str(time_tmp.year)+'/'+str(time_tmp.month).zfill(2)+'/'+str(time_tmp.day).zfill(2),
-                fileout=str(figures_path)+'/sss_smapjpl/sss_smapjpl_'+str(time_tmp.year)+str(time_tmp.month).zfill(2)+str(time_tmp.day).zfill(2)+'.png')
+    ds = xr.open_dataset(str(rawdata_path)+'/sss_smapjpl/'+filename).sel(longitude=slice(lonmin,lonmax), latitude=slice(latmax,latmin))
+    if os.path.isfile(str(rawdata_path)+'/seaice_amsr/'+filename_si):
+        map(ds.longitude,ds.latitude,ds.smap_sss.squeeze(),20,35,
+            palette='jet',unit='psu',land=True,coastline=True,
+            level_contour=15,label_contour=datestr_ice,x_contour=dsc.lon,y_contour=dsc.lat,data_contour=dsd.SI_12km_NH_ICECON_DAY.squeeze(),
+            title='SSS SMAP JPL - '+str(time_tmp.year)+'/'+str(time_tmp.month).zfill(2)+'/'+str(time_tmp.day).zfill(2),
+            fileout=str(figures_path)+'/sss_smapjpl/sss_smapjpl_'+str(time_tmp.year)+str(time_tmp.month).zfill(2)+str(time_tmp.day).zfill(2)+'.png')
+    else:
+        map(ds.longitude,ds.latitude,ds.smap_sss.squeeze(),20,35,
+            palette='jet',unit='psu',land=True,coastline=True,
+            title='SSS SMAP JPL - '+str(time_tmp.year)+'/'+str(time_tmp.month).zfill(2)+'/'+str(time_tmp.day).zfill(2),
+            fileout=str(figures_path)+'/sss_smapjpl/sss_smapjpl_'+str(time_tmp.year)+str(time_tmp.month).zfill(2)+str(time_tmp.day).zfill(2)+'.png')
+    #save sliced data
+    ds.to_netcdf(str(rawdata_path)+'/sss_smapjpl/SMAP_L3_SSS_'+str(year)+str(month).zfill(2)+str(day).zfill(2)+'_8DAYS_V5.0_subset.nc')
+                    
+    # upload the data and figure to the ftp website
+    os.system('lftp sftp://sassie@ftp.polarscience.org/ -e "cd /FTP/satellite/Figures/sss_smapjpl/; put '+str(figures_path)+'/sss_smapjpl/sss_smapjpl_'+str(time_tmp.year)+str(time_tmp.month).zfill(2)+str(time_tmp.day).zfill(2)+'.png; bye"')
+    os.system('lftp sftp://sassie@ftp.polarscience.org/ -e "cd /FTP/satellite/Data/sss_smapjpl/; put '+str(rawdata_path)+'/sss_smapjpl/SMAP_L3_SSS_'+str(year)+str(month).zfill(2)+str(day).zfill(2)+'_8DAYS_V5.0_subset.nc; bye"')
+
         
-
-
+        
 #SMOS SSS L3############################################
+# create folders locally if don't exist
 os.system('mkdir -p '+str(rawdata_path)+'/sss_smos')
 os.system('mkdir -p '+str(figures_path)+'/sss_smos')
 
-filename='SMOS-arctic-LOCEAN-SSS-'+str(year)+'-'+str(month).zfill(2)+'-'+str(day).zfill(2)+'-v1.1AT-7days.nc'
-i=0
-time_tmp=time - datetime.timedelta(days=i)
-while os.path.isfile(str(rawdata_path)+'/sss_smos/'+filename)==False and i<8:
-    time_tmp=time - datetime.timedelta(days=i)
-    filename='SMOS-arctic-LOCEAN-SSS-'+str(time_tmp.year)+'-'+str(time_tmp.month).zfill(2)+'-'+str(time_tmp.day).zfill(2)+'-v1.1AT-7days.nc'
-    os.system('wget -N -P '+str(rawdata_path)+'/sss_smos/'+' ftp://ext-catds-cecos-locean@ftp.ifremer.fr/Ocean_products/SMOS_ARCTIC_SSS_L3_LOCEAN/netcdf_weekly_v1_1/'+filename)   
-    i=i+1
+# download the data locally
+time_tmp=time - datetime.timedelta(days=1)
+filename=str(time_tmp.year)+'-'+str(time_tmp.month).zfill(2)+'-'+str(time_tmp.day).zfill(2)+'-L3A-AS-v700-arctic.nc'
+if os.path.isfile(str(rawdata_path)+'/sss_smos/'+filename)==False:
+    os.system('wget "https://urldefense.us/v3/__https://drive.google.com/uc?export=download&id=1EGov7WVIm_vGkPV1h8nI_L1igvsN_j1l__;!!PvBDto6Hs4WbVuu7!dhjcaQY23IzfOEEnjPZ4AgQy3uzi-J6ALc_-NAjRupLbvKRdMiuwgj1roM1NK1ABO4RA49C-1qs$" -O '+str(rawdata_path)+'/sss_smos/smos_sss_arctic_locean_nrt.zip')
+    os.system('unzip '+str(rawdata_path)+'/sss_smos/smos_sss_arctic_locean_nrt.zip -d '+str(rawdata_path)+'/sss_smos/')
+    os.system('rm '+str(rawdata_path)+'/sss_smos/smos_sss_arctic_locean_nrt.zip')
 
+# make a map and save the figure locally
 if os.path.isfile(str(rawdata_path)+'/sss_smos/'+filename):
-        ds = xr.open_dataset(str(rawdata_path)+'/sss_smos/'+filename)
-        if os.path.isfile(str(rawdata_path)+'/seaice_amsr/'+filename_si):
-            map(ds.longitude,ds.latitude,ds.smos_sss.squeeze(),20,35,
-                palette='jet',unit='psu',land=True,coastline=True,
-                level_contour=15,label_contour=datestr_ice,x_contour=dsc.lon,y_contour=dsc.lat,data_contour=dsd.SI_12km_NH_ICECON_DAY.squeeze(),
-                title='SSS SMOS - '+str(time_tmp.year)+'/'+str(time_tmp.month).zfill(2)+'/'+str(time_tmp.day).zfill(2),
-                fileout=str(figures_path)+'/sss_smos/sss_smos_'+str(time_tmp.year)+str(time_tmp.month).zfill(2)+str(time_tmp.day).zfill(2)+'.png')
-        else:
-            map(ds.longitude,ds.latitude,ds.smos_sss.squeeze(),20,35,
-                palette='jet',unit='psu',land=True,coastline=True,
-                title='SSS SMOS - '+str(time_tmp.year)+'/'+str(time_tmp.month).zfill(2)+'/'+str(time_tmp.day).zfill(2),
-                fileout=str(figures_path)+'/sss_smos/sss_smos_'+str(time_tmp.year)+str(time_tmp.month).zfill(2)+str(time_tmp.day).zfill(2)+'.png')
+    ds = xr.open_dataset(str(rawdata_path)+'/sss_smos/'+filename)
+    if os.path.isfile(str(rawdata_path)+'/seaice_amsr/'+filename_si):
+        map(ds.longitude,ds.latitude,ds.ACARD_SSS.squeeze(),20,35,
+            palette='jet',unit='psu',land=True,coastline=True,
+            level_contour=15,label_contour=datestr_ice,x_contour=dsc.lon,y_contour=dsc.lat,data_contour=dsd.SI_12km_NH_ICECON_DAY.squeeze(),
+            title='SSS SMOS - '+str(time_tmp.year)+'/'+str(time_tmp.month).zfill(2)+'/'+str(time_tmp.day).zfill(2),
+            fileout=str(figures_path)+'/sss_smos/sss_smos_'+str(time_tmp.year)+str(time_tmp.month).zfill(2)+str(time_tmp.day).zfill(2)+'.png')
+
+        map(ds.longitude,ds.latitude,ds.ACARD_SSS_uncertainty.squeeze(),0,5,
+            palette='jet',unit='psu',land=True,coastline=True,
+            level_contour=15,label_contour=datestr_ice,x_contour=dsc.lon,y_contour=dsc.lat,data_contour=dsd.SI_12km_NH_ICECON_DAY.squeeze(),
+            title='SSS SMOS uncertainty - '+str(time_tmp.year)+'/'+str(time_tmp.month).zfill(2)+'/'+str(time_tmp.day).zfill(2),
+            fileout=str(figures_path)+'/sss_smos/sss_smos_uncertainty_'+str(time_tmp.year)+str(time_tmp.month).zfill(2)+str(time_tmp.day).zfill(2)+'.png')
+    else:
+        map(ds.longitude,ds.latitude,ds.ACARD_SSS.squeeze(),20,35,
+            palette='jet',unit='psu',land=True,coastline=True,
+            title='SSS SMOS - '+str(time_tmp.year)+'/'+str(time_tmp.month).zfill(2)+'/'+str(time_tmp.day).zfill(2),
+            fileout=str(figures_path)+'/sss_smos/sss_smos_'+str(time_tmp.year)+str(time_tmp.month).zfill(2)+str(time_tmp.day).zfill(2)+'.png')
+            
+    # upload the data and figure to the ftp website
+    os.system('lftp sftp://sassie@ftp.polarscience.org/ -e "cd /FTP/satellite/Figures/sss_smos/; put '+str(figures_path)+'/sss_smos/sss_smos_'+str(time_tmp.year)+str(time_tmp.month).zfill(2)+str(time_tmp.day).zfill(2)+'.png; bye"')
+    os.system('lftp sftp://sassie@ftp.polarscience.org/ -e "cd /FTP/satellite/Figures/sss_smos/; put '+str(figures_path)+'/sss_smos/sss_smos_uncertainty_'+str(time_tmp.year)+str(time_tmp.month).zfill(2)+str(time_tmp.day).zfill(2)+'.png; bye"')
+    os.system('lftp sftp://sassie@ftp.polarscience.org/ -e "cd /FTP/satellite/Data/sss_smos/; put '+str(rawdata_path)+'/sss_smos/'+filename+'; bye"')
 
 
 
 #CCMP winds############################################
+# create folders locally if don't exist
 os.system('mkdir -p '+str(rawdata_path)+'/wind_ccmp')
 os.system('mkdir -p '+str(figures_path)+'/wind_ccmp')
 
+# download the data locally
 # filename_dt='CCMP_Wind_Analysis_'+str(year)+str(month).zfill(2)+str(day).zfill(2)+'_V02.0_L3.0_RSS.nc'
 filename='CCMP_RT_Wind_Analysis_'+str(year)+str(month).zfill(2)+str(day).zfill(2)+'_V02.1_L3.0_RSS.nc'
 i=0
 time_tmp=time - datetime.timedelta(days=i)
-while os.path.isfile(str(rawdata_path)+'/wind_ccmp/'+filename)==False and i<8:
+while os.path.isfile(str(rawdata_path)+'/wind_ccmp/'+filename)==False and i<9:
     time_tmp=time - datetime.timedelta(days=i)
     filename='CCMP_RT_Wind_Analysis_'+str(time_tmp.year)+str(time_tmp.month).zfill(2)+str(time_tmp.day).zfill(2)+'_V02.1_L3.0_RSS.nc'
     os.system('wget -N -P '+str(rawdata_path)+'/wind_ccmp/'+' https://data.remss.com/ccmp/v02.1.NRT/Y'+str(time_tmp.year)+'/M'+str(time_tmp.month).zfill(2)+'/'+filename)   
     i=i+1
 
+# make a map and save the figure locally
 if os.path.isfile(str(rawdata_path)+'/wind_ccmp/'+filename):
-        ds = xr.open_dataset(str(rawdata_path)+'/wind_ccmp/'+filename)
-        for t in range(0,len(ds.time)):
-            ts = datetime.datetime.strptime(str(ds.time[t].values),'%Y-%m-%dT%H:%M:%S.%f000').strftime("%Y-%m-%d %H:%M:%S") 
-            if os.path.isfile(str(rawdata_path)+'/seaice_amsr/'+filename_si):
-                map(ds.longitude,ds.latitude,numpy.sqrt(ds.uwnd[t,:,:].squeeze()**2+ds.vwnd[t,:,:].squeeze()**2).squeeze(),0,15,
-                    palette='jet',unit='m/s',land=True,coastline=True,
-                    level_contour=15,label_contour=datestr_ice,x_contour=dsc.lon,y_contour=dsc.lat,data_contour=dsd.SI_12km_NH_ICECON_DAY.squeeze(),
-                    u=ds.uwnd[t,:,:].squeeze(),v=ds.vwnd[t,:,:].squeeze(),unit_vector='m/s',scale=200,
-                    title='Wind CCMP - '+ts,
-                    fileout=str(figures_path)+'/wind_ccmp/wind_ccmp_'+str(time_tmp.year)+str(time_tmp.month).zfill(2)+str(time_tmp.day).zfill(2)+'_'+str(t)+'.png')
-            else:
-                map(ds.longitude,ds.latitude,numpy.sqrt(ds.uwnd[t,:,:].squeeze()**2+ds.vwnd[t,:,:].squeeze()**2).squeeze(),0,15,
-                    palette='jet',unit='m/s',land=True,coastline=True,
-                    u=ds.uwnd[t,:,:].squeeze(),v=ds.vwnd[t,:,:].squeeze(),unit_vector='m/s',scale=200,
-                    title='Wind CCMP - '+ts,
-                    fileout=str(figures_path)+'/wind_ccmp/wind_ccmp_'+str(time_tmp.year)+str(time_tmp.month).zfill(2)+str(time_tmp.day).zfill(2)+'_'+str(t)+'.png')
-                
-
+    ds = xr.open_dataset(str(rawdata_path)+'/wind_ccmp/'+filename)
+    for t in range(0,len(ds.time)):
+        ts = datetime.datetime.strptime(str(ds.time[t].values),'%Y-%m-%dT%H:%M:%S.%f000').strftime("%Y-%m-%d %H:%M:%S") 
+        if os.path.isfile(str(rawdata_path)+'/seaice_amsr/'+filename_si):
+            map(ds.longitude,ds.latitude,numpy.sqrt(ds.uwnd[t,:,:].squeeze()**2+ds.vwnd[t,:,:].squeeze()**2).squeeze(),0,15,
+                palette='jet',unit='m/s',land=True,coastline=True,
+                level_contour=15,label_contour=datestr_ice,x_contour=dsc.lon,y_contour=dsc.lat,data_contour=dsd.SI_12km_NH_ICECON_DAY.squeeze(),
+                u=ds.uwnd[t,:,:].squeeze(),v=ds.vwnd[t,:,:].squeeze(),unit_vector='m/s',scale=200,
+                title='Wind CCMP - '+ts,
+                fileout=str(figures_path)+'/wind_ccmp/wind_ccmp_'+str(time_tmp.year)+str(time_tmp.month).zfill(2)+str(time_tmp.day).zfill(2)+'_'+str(t)+'.png')
+        else:
+            map(ds.longitude,ds.latitude,numpy.sqrt(ds.uwnd[t,:,:].squeeze()**2+ds.vwnd[t,:,:].squeeze()**2).squeeze(),0,15,
+                palette='jet',unit='m/s',land=True,coastline=True,
+                u=ds.uwnd[t,:,:].squeeze(),v=ds.vwnd[t,:,:].squeeze(),unit_vector='m/s',scale=200,
+                title='Wind CCMP - '+ts,
+                fileout=str(figures_path)+'/wind_ccmp/wind_ccmp_'+str(time_tmp.year)+str(time_tmp.month).zfill(2)+str(time_tmp.day).zfill(2)+'_'+str(t)+'.png')
+        
+        # upload the figure to the ftp website
+        os.system('lftp sftp://sassie@ftp.polarscience.org/ -e "cd /FTP/satellite/Figures/wind_ccmp/; put '+str(figures_path)+'/wind_ccmp/wind_ccmp_'+str(time_tmp.year)+str(time_tmp.month).zfill(2)+str(time_tmp.day).zfill(2)+'_'+str(t)+'.png; bye"')
+    # upload the data to the ftp website
+    os.system('lftp sftp://sassie@ftp.polarscience.org/ -e "cd /FTP/satellite/Data/wind_ccmp/; put '+str(rawdata_path)+'/wind_ccmp/'+filename+'; bye"')      
+        
+        
 
 #AVISO SLA ############################################
+# create folders locally if don't exist
 os.system('mkdir -p '+str(rawdata_path)+'/sla_aviso')
 os.system('mkdir -p '+str(figures_path)+'/sla_aviso')
 
-# filename_dt='dt_global_allsat_phy_l4_'+str(year)+str(month).zfill(2)+str(day).zfill(2)+'_*nc'
+# download the data locally
 filename='nrt_global_allsat_phy_l4_'+str(year)+str(month).zfill(2)+str(day).zfill(2)+'_*nc'
 i=0
 time_tmp=time - datetime.timedelta(days=i)
-while len(glob.glob(str(rawdata_path)+'/sla_aviso/'+filename))<1 and i<8:
+while len(glob.glob(str(rawdata_path)+'/sla_aviso/'+filename))<1 and i<9:
     time_tmp=time - datetime.timedelta(days=i)
     filename='nrt_global_allsat_phy_l4_'+str(time_tmp.year)+str(time_tmp.month).zfill(2)+str(time_tmp.day).zfill(2)+'_*nc'
     os.system('wget -N -P '+str(rawdata_path)+'/sla_aviso/'+' ftp://nrt.cmems-du.eu/Core/SEALEVEL_GLO_PHY_L4_NRT_OBSERVATIONS_008_046/dataset-duacs-nrt-global-merged-allsat-phy-l4/'+str(time_tmp.year)+'/'+str(time_tmp.month).zfill(2)+'/'+filename)   
     i=i+1
 
+# make a map and save the figure locally
 if len(glob.glob(str(rawdata_path)+'/sla_aviso/'+filename))>=1:
-        filename=glob.glob(str(rawdata_path)+'/sla_aviso/'+filename)[0]
-        ds = xr.open_dataset(filename).sel(longitude=slice(lonmin,lonmax), latitude=slice(latmin,latmax))
-        if os.path.isfile(str(rawdata_path)+'/seaice_amsr/'+filename_si):
-            map(ds.longitude,ds.latitude,ds.sla.squeeze()*10**2,-25,25,
-                palette='seismic',unit='cm',land=True,coastline=True,
-                level_contour=15,label_contour=datestr_ice,x_contour=dsc.lon,y_contour=dsc.lat,data_contour=dsd.SI_12km_NH_ICECON_DAY.squeeze(),
-                u=ds.ugos.squeeze()*10**2,v=ds.vgos.squeeze()*10**2,unit_vector='cm/s',scale=400,
-                title='SLA Aviso - '+str(time_tmp.year)+'/'+str(time_tmp.month).zfill(2)+'/'+str(time_tmp.day).zfill(2),
-                fileout=str(figures_path)+'/sla_aviso/sla_aviso_'+str(time_tmp.year)+str(time_tmp.month).zfill(2)+str(time_tmp.day).zfill(2)+'.png')
-        else:
-            map(ds.longitude,ds.latitude,ds.sla.squeeze()*10**2,-25,25,
-                palette='seismic',unit='cm',land=True,coastline=True,
-                u=ds.ugos.squeeze()*10**2,v=ds.vgos.squeeze()*10**2,unit_vector='cm/s',scale=400,
-                title='SLA Aviso - '+str(time_tmp.year)+'/'+str(time_tmp.month).zfill(2)+'/'+str(time_tmp.day).zfill(2),
-                fileout=str(figures_path)+'/sla_aviso/sla_aviso_'+str(time_tmp.year)+str(time_tmp.month).zfill(2)+str(time_tmp.day).zfill(2)+'.png')
-            
-
-
-############################################################
-######## Push data and figures to ftp ######################
-############################################################
-# scp folder per variable for figures AND data
+    filename=glob.glob(str(rawdata_path)+'/sla_aviso/'+filename)[0]
+    ds = xr.open_dataset(filename).sel(longitude=slice(lonmin,lonmax), latitude=slice(latmin,latmax))
+    if os.path.isfile(str(rawdata_path)+'/seaice_amsr/'+filename_si):
+        map(ds.longitude,ds.latitude,ds.sla.squeeze()*10**2,-25,25,
+            palette='seismic',unit='cm',land=True,coastline=True,
+            level_contour=15,label_contour=datestr_ice,x_contour=dsc.lon,y_contour=dsc.lat,data_contour=dsd.SI_12km_NH_ICECON_DAY.squeeze(),
+            u=ds.ugos.squeeze()*10**2,v=ds.vgos.squeeze()*10**2,unit_vector='cm/s',scale=400,
+            title='SLA Aviso - '+str(time_tmp.year)+'/'+str(time_tmp.month).zfill(2)+'/'+str(time_tmp.day).zfill(2),
+            fileout=str(figures_path)+'/sla_aviso/sla_aviso_'+str(time_tmp.year)+str(time_tmp.month).zfill(2)+str(time_tmp.day).zfill(2)+'.png')
+    else:
+        map(ds.longitude,ds.latitude,ds.sla.squeeze()*10**2,-25,25,
+            palette='seismic',unit='cm',land=True,coastline=True,
+            u=ds.ugos.squeeze()*10**2,v=ds.vgos.squeeze()*10**2,unit_vector='cm/s',scale=400,
+            title='SLA Aviso - '+str(time_tmp.year)+'/'+str(time_tmp.month).zfill(2)+'/'+str(time_tmp.day).zfill(2),
+            fileout=str(figures_path)+'/sla_aviso/sla_aviso_'+str(time_tmp.year)+str(time_tmp.month).zfill(2)+str(time_tmp.day).zfill(2)+'.png')
+    #save sliced data
+    ds.to_netcdf(str(rawdata_path)+'/sla_aviso/nrt_global_allsat_phy_l4_'+str(year)+str(month).zfill(2)+str(day).zfill(2)+'_subset.nc')
+        
+    # upload the data and figure to the ftp website
+    os.system('lftp sftp://sassie@ftp.polarscience.org/ -e "cd /FTP/satellite/Figures/sla_aviso/; put '+str(figures_path)+'/sla_aviso/sla_aviso_'+str(time_tmp.year)+str(time_tmp.month).zfill(2)+str(time_tmp.day).zfill(2)+'.png; bye"')
+    os.system('lftp sftp://sassie@ftp.polarscience.org/ -e "cd /FTP/satellite/Data/sla_aviso/; put '+str(rawdata_path)+'/sla_aviso/nrt_global_allsat_phy_l4_'+str(year)+str(month).zfill(2)+str(day).zfill(2)+'_subset.nc; bye"')
 
 
