@@ -203,7 +203,7 @@ os.system('mkdir -p '+str(figures_path)+'/seaice_amsr')
 filename_si='AMSR_U2_L3_SeaIce12km_B04_'+str(year)+str(month).zfill(2)+str(day).zfill(2)+'.he5'
 i=0
 time_tmp=time - datetime.timedelta(days=i)
-while os.path.isfile(str(rawdata_path)+'/seaice_amsr/'+filename_si)==False and i<9:
+while os.path.isfile(str(rawdata_path)+'/seaice_amsr/'+filename_si)==False and i<15:
     time_tmp=time - datetime.timedelta(days=i)
     filename_si='AMSR_U2_L3_SeaIce12km_B04_'+str(time_tmp.year)+str(time_tmp.month).zfill(2)+str(time_tmp.day).zfill(2)+'.he5'
     os.system('wget -N -P '+str(rawdata_path)+'/seaice_amsr/'+' https://n5eil01u.ecs.nsidc.org/AMSA/AU_SI12.001/'+str(time_tmp.year)+'.'+str(time_tmp.month).zfill(2)+'.'+str(time_tmp.day).zfill(2)+'/'+filename_si)   
@@ -241,7 +241,7 @@ os.system('lftp sftp://sassie@ftp.polarscience.org/ -e "cd /FTP/satellite/Data/i
 filename='masie_all_r00_v01_'+str(year)+str(doy)+'_4km.nc'
 i=0
 time_tmp=time - datetime.timedelta(days=i)
-while os.path.isfile(str(rawdata_path)+'/iceextent_masie/'+filename)==False and i<9:
+while os.path.isfile(str(rawdata_path)+'/iceextent_masie/'+filename)==False and i<15:
     time_tmp=time - datetime.timedelta(days=i)
     filename='masie_all_r00_v01_'+str(time_tmp.year)+str(time_tmp.timetuple().tm_yday)+'_4km.nc'
     os.system('wget -N -P '+str(rawdata_path)+'/iceextent_masie/'+' https://masie_web.apps.nsidc.org/pub/DATASETS/NOAA/G02186/netcdf/4km/'+str(time_tmp.year)+'/'+filename)   
@@ -278,7 +278,7 @@ os.system('mkdir -p '+str(figures_path)+'/sst_oi')
 filename='oisst-avhrr-v02r01.'+str(year)+str(month).zfill(2)+str(day).zfill(2)+'_preliminary.nc'
 i=0
 time_tmp=time - datetime.timedelta(days=i)
-while os.path.isfile(str(rawdata_path)+'/sst_oi/'+filename)==False and i<9:
+while os.path.isfile(str(rawdata_path)+'/sst_oi/'+filename)==False and i<15:
     time_tmp=time - datetime.timedelta(days=i)
     filename='oisst-avhrr-v02r01.'+str(time_tmp.year)+str(time_tmp.month).zfill(2)+str(time_tmp.day).zfill(2)+'_preliminary.nc'
     os.system('wget -N -P '+str(rawdata_path)+'/sst_oi/'+' https://www.ncei.noaa.gov/data/sea-surface-temperature-optimum-interpolation/v2.1/access/avhrr/'+str(time_tmp.year)+str(time_tmp.month).zfill(2)+'/'+filename)   
@@ -317,7 +317,7 @@ os.system('mkdir -p '+str(figures_path)+'/sss_smapjpl')
 filename='SMAP_L3_SSS_'+str(year)+str(month).zfill(2)+str(day).zfill(2)+'_8DAYS_V5.0.nc'
 i=0
 time_tmp=time - datetime.timedelta(days=i)
-while os.path.isfile(str(rawdata_path)+'/sss_smapjpl/'+filename)==False and i<9:
+while os.path.isfile(str(rawdata_path)+'/sss_smapjpl/'+filename)==False and i<15:
     time_tmp=time - datetime.timedelta(days=i)
     filename='SMAP_L3_SSS_'+str(time_tmp.year)+str(time_tmp.month).zfill(2)+str(time_tmp.day).zfill(2)+'_8DAYS_V5.0.nc'
     os.system('wget -N -P '+str(rawdata_path)+'/sss_smapjpl/'+' https://archive.podaac.earthdata.nasa.gov/podaac-ops-cumulus-protected/SMAP_JPL_L3_SSS_CAP_8DAY-RUNNINGMEAN_V5/'+str(time_tmp.year)+'/'+str(int(time_tmp.timetuple().tm_yday)-4)+'/'+filename)
@@ -397,7 +397,7 @@ os.system('mkdir -p '+str(figures_path)+'/wind_ccmp')
 filename='CCMP_RT_Wind_Analysis_'+str(year)+str(month).zfill(2)+str(day).zfill(2)+'_V02.1_L3.0_RSS.nc'
 i=0
 time_tmp=time - datetime.timedelta(days=i)
-while os.path.isfile(str(rawdata_path)+'/wind_ccmp/'+filename)==False and i<9:
+while os.path.isfile(str(rawdata_path)+'/wind_ccmp/'+filename)==False and i<15:
     time_tmp=time - datetime.timedelta(days=i)
     filename='CCMP_RT_Wind_Analysis_'+str(time_tmp.year)+str(time_tmp.month).zfill(2)+str(time_tmp.day).zfill(2)+'_V02.1_L3.0_RSS.nc'
     os.system('wget -N -P '+str(rawdata_path)+'/wind_ccmp/'+' https://data.remss.com/ccmp/v02.1.NRT/Y'+str(time_tmp.year)+'/M'+str(time_tmp.month).zfill(2)+'/'+filename)   
@@ -438,7 +438,7 @@ os.system('mkdir -p '+str(figures_path)+'/sla_aviso')
 filename='nrt_global_allsat_phy_l4_'+str(year)+str(month).zfill(2)+str(day).zfill(2)+'_*nc'
 i=0
 time_tmp=time - datetime.timedelta(days=i)
-while len(glob.glob(str(rawdata_path)+'/sla_aviso/'+filename))<1 and i<9:
+while len(glob.glob(str(rawdata_path)+'/sla_aviso/'+filename))<1 and i<15:
     time_tmp=time - datetime.timedelta(days=i)
     filename='nrt_global_allsat_phy_l4_'+str(time_tmp.year)+str(time_tmp.month).zfill(2)+str(time_tmp.day).zfill(2)+'_*nc'
     os.system('wget -N -P '+str(rawdata_path)+'/sla_aviso/'+' ftp://nrt.cmems-du.eu/Core/SEALEVEL_GLO_PHY_L4_NRT_OBSERVATIONS_008_046/dataset-duacs-nrt-global-merged-allsat-phy-l4/'+str(time_tmp.year)+'/'+str(time_tmp.month).zfill(2)+'/'+filename)   
