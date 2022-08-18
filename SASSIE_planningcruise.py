@@ -168,12 +168,14 @@ def map(x,y,data,vmin,vmax,**karg):
         q=plt.quiver(x[::5].values,y[::2].values,karg['u'][::2,::5].values,karg['v'][::2,::5].values,scale=karg['scale'],transform=ccrs.PlateCarree())
         qk= plt.quiverkey (q,0.95,-0.07,10,'10'+karg['unit_vector'],labelpos='E')
 
-    filename=str(rawdata_path)+'/Ship_track.xlsx'
+    filename=str(rawdata_path)+'/Ship_track.csv'
     if os.path.isfile(filename):
-        df = pd.read_excel(filename,header=None)
-        plt.plot(df.iloc[:,4],df.iloc[:,3],linestyle='--',color='#808080',marker='o',markersize=6,markerfacecolor='#808080',markeredgecolor='k',transform=cartopy.crs.PlateCarree())                    
+        df = pd.read_csv(filename, header=None, names=['yyyy','mm','dd','HH','MM','lat','lon'])
+        # plot ship track - one marker per day (select the first time of each day)
+        df = df.drop_duplicates(subset=['mm', 'dd'], keep='first')
+        plt.plot(df.lon,df.lat,linestyle='--',color='#808080',marker='o',markersize=6,markerfacecolor='#808080',markeredgecolor='k',transform=cartopy.crs.PlateCarree())                 
         for t in range(df.shape[0]):
-            plt.annotate(str(df.iloc[t,1]).zfill(2)+'/'+str(df.iloc[t,2]).zfill(2), xy=(df.iloc[t,4],df.iloc[t,3]),fontsize=10,color='#808080',xycoords=ccrs.PlateCarree()._as_mpl_transform(ax))
+            plt.annotate(str(df.mm.iloc[t]).zfill(2)+'/'+str(df.dd.iloc[t]).zfill(2), xy=(df.lon.iloc[t],df.lat.iloc[t]),fontsize=10,color='#808080',xycoords=ccrs.PlateCarree()._as_mpl_transform(ax))        
     cbar_ax = fig.add_axes([0.1, 0.1, 0.8, 0.04])
     h=plt.colorbar(pp, cax=cbar_ax,orientation='horizontal',ax=ax)
     h.ax.tick_params(labelsize=20)
@@ -191,7 +193,7 @@ def map(x,y,data,vmin,vmax,**karg):
 doy = time.timetuple().tm_yday
 
 #Ship tracks from ftp site ######################
-os.system('lftp sftp://sassie@ftp.polarscience.org/ -e "set xfer:clobber on; lcd '+str(rawdata_path)+'/; get FTP/Ship_track.xlsx; exit"')
+os.system('lftp sftp://sassie@ftp.polarscience.org/ -e "set xfer:clobber on; lcd '+str(rawdata_path)+'/; get FTP/Ship_track.csv; exit"')
 
 
 #AMSR Sea ice ############################################
@@ -464,8 +466,8 @@ if len(glob.glob(str(rawdata_path)+'/sla_aviso/'+filename))>=1:
     #save sliced data
     ds.to_netcdf(str(rawdata_path)+'/sla_aviso/nrt_global_allsat_phy_l4_'+str(year)+str(month).zfill(2)+str(day).zfill(2)+'_subset.nc')
         
-#     # upload the data and figure to the ftp website
-#     os.system('lftp sftp://sassie@ftp.polarscience.org/ -e "cd /FTP/satellite/Figures/sla_aviso/; put '+str(figures_path)+'/sla_aviso/sla_aviso_'+str(time_tmp.year)+str(time_tmp.month).zfill(2)+str(time_tmp.day).zfill(2)+'.png; bye"')
-#     os.system('lftp sftp://sassie@ftp.polarscience.org/ -e "cd /FTP/satellite/Data/sla_aviso/; put '+str(rawdata_path)+'/sla_aviso/nrt_global_allsat_phy_l4_'+str(year)+str(month).zfill(2)+str(day).zfill(2)+'_subset.nc; bye"')
+    # upload the data and figure to the ftp website
+    os.system('lftp sftp://sassie@ftp.polarscience.org/ -e "cd /FTP/satellite/Figures/sla_aviso/; put '+str(figures_path)+'/sla_aviso/sla_aviso_'+str(time_tmp.year)+str(time_tmp.month).zfill(2)+str(time_tmp.day).zfill(2)+'.png; bye"')
+    os.system('lftp sftp://sassie@ftp.polarscience.org/ -e "cd /FTP/satellite/Data/sla_aviso/; put '+str(rawdata_path)+'/sla_aviso/nrt_global_allsat_phy_l4_'+str(year)+str(month).zfill(2)+str(day).zfill(2)+'_subset.nc; bye"')
 
 
