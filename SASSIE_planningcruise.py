@@ -42,9 +42,10 @@ from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
 rawdata_path=Path('/Users/severinf/Data/SASSIE/satellite/') 
 figures_path=Path('/Users/severinf/Figures/SASSIE/cruise/') 
 
-# KYLA CLOUD
-# rawdata_path=Path('/home/jovyan/data/SASSIE/satellite/')
-# figures_path=Path('/home/jovyan/figures/SASSIE')
+# KYLA
+rawdata_path=Path('/data1/sassie/FTP/satellite/') 
+figures_path=Path('/data1/sassie/FTP/satellite/figures/') 
+
 
 
 ######### OTHER PARAMETERS ###################
@@ -64,10 +65,9 @@ latmax=90
 #region for maps
 lon0=-150
 lonmapmin=-165
-lonmapmax=-120
-latmapmin=68
+lonmapmax=-133
+latmapmin=69
 latmapmax=78
-
 
 
 ######## FUNCTIONS ##########################
@@ -181,7 +181,7 @@ def map(x,y,data,vmin,vmax,**karg):
     cmin,cmax = h.mappable.get_clim()
     ax.set_title(karg['title'],fontsize=20)
     plt.subplots_adjust(right=0.9,left=0.1,top=0.9,bottom=0.18)
-    plt.savefig(karg['fileout'], dpi=fig.dpi)
+    plt.savefig(karg['fileout'], dpi=72)
     
     
 ######################################################
@@ -464,8 +464,8 @@ if len(glob.glob(str(rawdata_path)+'/sla_aviso/'+filename))>=1:
     #save sliced data
     ds.to_netcdf(str(rawdata_path)+'/sla_aviso/nrt_global_allsat_phy_l4_'+str(year)+str(month).zfill(2)+str(day).zfill(2)+'_subset.nc')
         
-    # upload the data and figure to the ftp website
-    os.system('lftp sftp://sassie@ftp.polarscience.org/ -e "cd /FTP/satellite/Figures/sla_aviso/; put '+str(figures_path)+'/sla_aviso/sla_aviso_'+str(time_tmp.year)+str(time_tmp.month).zfill(2)+str(time_tmp.day).zfill(2)+'.png; bye"')
-    os.system('lftp sftp://sassie@ftp.polarscience.org/ -e "cd /FTP/satellite/Data/sla_aviso/; put '+str(rawdata_path)+'/sla_aviso/nrt_global_allsat_phy_l4_'+str(year)+str(month).zfill(2)+str(day).zfill(2)+'_subset.nc; bye"')
+#     # upload the data and figure to the ftp website
+#     os.system('lftp sftp://sassie@ftp.polarscience.org/ -e "cd /FTP/satellite/Figures/sla_aviso/; put '+str(figures_path)+'/sla_aviso/sla_aviso_'+str(time_tmp.year)+str(time_tmp.month).zfill(2)+str(time_tmp.day).zfill(2)+'.png; bye"')
+#     os.system('lftp sftp://sassie@ftp.polarscience.org/ -e "cd /FTP/satellite/Data/sla_aviso/; put '+str(rawdata_path)+'/sla_aviso/nrt_global_allsat_phy_l4_'+str(year)+str(month).zfill(2)+str(day).zfill(2)+'_subset.nc; bye"')
 
 
