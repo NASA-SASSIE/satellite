@@ -408,7 +408,7 @@ while os.path.isfile(str(rawdata_path)+'/wind_ccmp/'+filename)==False and i<15:
 # make a map and save the figure locally
 if os.path.isfile(str(rawdata_path)+'/wind_ccmp/'+filename):
     ds = xr.open_dataset(str(rawdata_path)+'/wind_ccmp/'+filename)
-    for t in range(0,len(ds.time)):
+    for t in [0]: #range(0,len(ds.time)):
         ts = datetime.datetime.strptime(str(ds.time[t].values),'%Y-%m-%dT%H:%M:%S.%f000').strftime("%Y-%m-%d %H:%M:%S") 
         if os.path.isfile(str(rawdata_path)+'/seaice_amsr/'+filename_si):
             map(ds.longitude,ds.latitude,numpy.sqrt(ds.uwnd[t,:,:].squeeze()**2+ds.vwnd[t,:,:].squeeze()**2).squeeze(),0,15,
